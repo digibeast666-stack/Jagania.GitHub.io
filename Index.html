@@ -1,0 +1,627 @@
+import { useState, useRef, useEffect } from 'react';
+import { Upload, Link2, MessageSquare, Loader2, X, Download, FileText, FileSpreadsheet, Presentation, LogOut, Edit3, Save } from 'lucide-react';
+
+// Types
+interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
+interface AlertState {
+  message: string;
+  type: 'success' | 'error' | 'info' | '';
+}
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  documentAction?: DocumentAction;
+}
+
+interface DocumentAction {
+  type: 'edit' | 'create' | 'download';
+  fileName: string;
+  fileType: 'doc' | 'spreadsheet' | 'slide';
+  status: 'pending' | 'completed';
+}
+
+interface KimmySession {
+  id: string;
+  contentSource: string;
+  contentType: 'url' | 'document';
+  documents: UploadedDocument[];
+  isProcessing: boolean;
+  isReady: boolean;
+}
+
+interface UploadedDocument {
+  id: string;
+  name: string;
+  type: 'doc' | 'spreadsheet' | 'slide' | 'pdf' | 'other';
+  url: string;
+  uploadedAt: Date;
+  canEdit: boolean;
+}
+
+// Alert Component
+const Alert = ({ message, type }: AlertState) => {
+  const getAlertTypeClass = (alertType: AlertState['type']): string => {
+    switch (alertType) {
+      case 'success': return 'bg-green-500 text-white';
+      case 'error': return 'bg-red-500 text-white';
+      case 'info': return 'bg-blue-500 text-white';
+      default: return 'bg-gray-700 text-white';
+    }
+  };
+
+  if (!message) return null;
+
+  return (
+    <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ${getAlertTypeClass(type)} max-w-md`} role="alert">
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <p className="font-bold capitalize">{type || 'Alert'}</p>
+          <p className="text-sm">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Login/Register Component
+const AuthScreen = ({ onLogin }: { onLogin: (user: User) => void }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = () => {
+    if (!email || !password || (!isLogin && !name)) return;
+    
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      const user: User = {
+        id: Date.now().toString(),
+        email,
+        name: name || email.split('@')[0]
+      };
+      onLogin(user);
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSubmit();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-6xl font-bold text-white mb-2">Jagania</h1>
+          <p className="text-xl text-purple-200">AI-Powered Document Intelligence</p>
+          <p className="text-sm text-purple-300 mt-2">Powered by Kimmy Agent</p>
+        </div>
+
+        <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 border border-white border-opacity-20">
+          <h2 className="text-2xl font-semibold text-white mb-6 text-center">
+            {isLogin ? 'Welcome Back' : 'Create Account'}
+          </h2>
+
+          <div className="space-y-4">
+            {!isLogin && (
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Full Name"
+                className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-purple-200 border border-white border-opacity-20 focus:border-opacity-60 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              />
+            )}
+            
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Email"
+              className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-purple-200 border border-white border-opacity-20 focus:border-opacity-60 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Password"
+              className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-purple-200 border border-white border-opacity-20 focus:border-opacity-60 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !email || !password || (!isLogin && !name)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {isLogin ? 'Logging in...' : 'Creating account...'}
+                </>
+              ) : (
+                isLogin ? 'Login' : 'Sign Up'
+              )}
+            </button>
+
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="w-full text-purple-200 hover:text-white transition-colors text-sm"
+            >
+              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Document Card Component
+const DocumentCard = ({ doc, onDownload, onEdit }: { 
+  doc: UploadedDocument; 
+  onDownload: (doc: UploadedDocument) => void;
+  onEdit: (doc: UploadedDocument) => void;
+}) => {
+  const getIcon = () => {
+    switch (doc.type) {
+      case 'doc': return <FileText className="w-5 h-5" />;
+      case 'spreadsheet': return <FileSpreadsheet className="w-5 h-5" />;
+      case 'slide': return <Presentation className="w-5 h-5" />;
+      default: return <FileText className="w-5 h-5" />;
+    }
+  };
+
+  return (
+    <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-3 border border-white border-opacity-20 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="text-blue-300">{getIcon()}</div>
+        <div>
+          <p className="text-white font-medium text-sm">{doc.name}</p>
+          <p className="text-blue-200 text-xs">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        {doc.canEdit && (
+          <button
+            onClick={() => onEdit(doc)}
+            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-all"
+            title="Ask Kimmy to edit"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+        )}
+        <button
+          onClick={() => onDownload(doc)}
+          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-all"
+          title="Download"
+        >
+          <Download className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Main Dashboard
+const Dashboard = ({ user, onLogout }: { user: User; onLogout: () => void }) => {
+  const [urlInput, setUrlInput] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [session, setSession] = useState<KimmySession | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUrlSubmit = () => {
+    if (urlInput.trim()) {
+      const newSession: KimmySession = {
+        id: Date.now().toString(),
+        contentSource: urlInput.trim(),
+        contentType: 'url',
+        documents: [],
+        isProcessing: false,
+        isReady: true,
+      };
+      setSession(newSession);
+      setUrlInput('');
+    }
+  };
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      const fileType = file.type;
+      
+      let docType: UploadedDocument['type'] = 'other';
+      let canEdit = false;
+
+      if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
+        docType = 'spreadsheet';
+        canEdit = true;
+      } else if (fileType.includes('presentation') || fileType.includes('slide')) {
+        docType = 'slide';
+        canEdit = true;
+      } else if (fileType.includes('document') || fileType.includes('word')) {
+        docType = 'doc';
+        canEdit = true;
+      } else if (fileType === 'application/pdf') {
+        docType = 'pdf';
+      }
+
+      const newDoc: UploadedDocument = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: docType,
+        url: URL.createObjectURL(file),
+        uploadedAt: new Date(),
+        canEdit,
+      };
+
+      const newSession: KimmySession = {
+        id: Date.now().toString(),
+        contentSource: file.name,
+        contentType: 'document',
+        documents: [newDoc],
+        isProcessing: false,
+        isReady: true,
+      };
+      
+      setSession(newSession);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
+  if (session) {
+    return <ChatInterface user={user} session={session} onBack={() => setSession(null)} onLogout={onLogout} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900">
+      {/* Header */}
+      <div className="bg-black bg-opacity-30 backdrop-blur-lg border-b border-white border-opacity-10 p-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Jagania</h1>
+            <p className="text-sm text-purple-200">Welcome back, {user.name}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto p-8">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-white mb-4">Start a Session with Kimmy</h2>
+          <p className="text-xl text-purple-200">Upload documents or provide a URL to begin</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* URL Input */}
+          <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 border border-white border-opacity-20 hover:border-opacity-40 transition-all">
+            <div className="flex items-center gap-3 mb-4">
+              <Link2 className="w-8 h-8 text-blue-300" />
+              <h3 className="text-2xl font-semibold text-white">From URL</h3>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com/document"
+                className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-purple-200 border border-white border-opacity-20 focus:border-opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                onClick={handleUrlSubmit}
+                disabled={!urlInput.trim()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Start Session
+              </button>
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div
+            className={`bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 border-2 border-dashed transition-all ${
+              isDragging ? 'border-purple-400 bg-opacity-20' : 'border-white border-opacity-20 hover:border-opacity-40'
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Upload className="w-8 h-8 text-purple-300" />
+              <h3 className="text-2xl font-semibold text-white">Upload Document</h3>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => handleFileUpload(e.target.files)}
+              accept=".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+              className="hidden"
+            />
+            <div className="text-center space-y-4">
+              <p className="text-purple-200">Drop your file here or</p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+              >
+                Choose File
+              </button>
+              <p className="text-xs text-purple-300">Docs, Spreadsheets, Slides, PDFs supported</p>
+              <p className="text-xs text-blue-300 mt-2">✨ Kimmy can edit Docs, Spreadsheets & Slides</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Chat Interface
+const ChatInterface = ({ user, session, onBack, onLogout }: { 
+  user: User; 
+  session: KimmySession; 
+  onBack: () => void;
+  onLogout: () => void;
+}) => {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: `Hello ${user.name}! I'm Kimmy, your AI document assistant. I've analyzed "${session.contentSource}" and I'm ready to help. I can answer questions, make edits to your documents, and generate new files for you.`,
+      timestamp: new Date(),
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showAlert, setShowAlert] = useState<AlertState>({ message: '', type: '' });
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleDownload = (doc: UploadedDocument) => {
+    setShowAlert({ message: `Downloading ${doc.name}...`, type: 'success' });
+    // In production, this would trigger actual download
+    setTimeout(() => setShowAlert({ message: '', type: '' }), 3000);
+  };
+
+  const handleEdit = (doc: UploadedDocument) => {
+    setInput(`Edit ${doc.name}: `);
+  };
+
+  const handleSend = () => {
+    if (!input.trim() || isTyping) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const userInput = input.trim();
+    setInput('');
+    setIsTyping(true);
+
+    // Simulate AI response with document actions
+    setTimeout(() => {
+      const isEditRequest = userInput.toLowerCase().includes('edit') || 
+                           userInput.toLowerCase().includes('change') ||
+                           userInput.toLowerCase().includes('update');
+      
+      let aiResponse: Message;
+      
+      if (isEditRequest && session.documents.length > 0) {
+        const doc = session.documents[0];
+        aiResponse = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `I've made the requested changes to "${doc.name}". The document has been updated and is ready for download.`,
+          timestamp: new Date(),
+          documentAction: {
+            type: 'edit',
+            fileName: doc.name,
+            fileType: doc.type,
+            status: 'completed'
+          }
+        };
+      } else {
+        aiResponse = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `Based on "${session.contentSource}": [This is a demo response. In production, Kimmy will provide actual AI-powered answers grounded in your document content. I can also edit spreadsheets, slides, and docs - just ask!]`,
+          timestamp: new Date(),
+        };
+      }
+      
+      setMessages((prev) => [...prev, aiResponse]);
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
+      {showAlert.message && <Alert message={showAlert.message} type={showAlert.type} />}
+      
+      {/* Header */}
+      <div className="bg-black bg-opacity-30 backdrop-blur-lg border-b border-white border-opacity-10 p-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all"
+            >
+              ← Back
+            </button>
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-6 h-6 text-blue-400" />
+              <div>
+                <h2 className="text-white font-semibold">Kimmy Agent Session</h2>
+                <p className="text-sm text-blue-300">Source: {session.contentSource}</p>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {messages.map((msg) => (
+                <div key={msg.id}>
+                  <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-2xl rounded-2xl p-4 ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white bg-opacity-10 backdrop-blur-lg text-white border border-white border-opacity-20'
+                    }`}>
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-xs mt-2 opacity-70">
+                        {msg.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {msg.documentAction && (
+                    <div className="flex justify-start mt-2">
+                      <div className="bg-green-600 bg-opacity-20 border border-green-500 rounded-lg p-3 flex items-center gap-3">
+                        <Save className="w-5 h-5 text-green-400" />
+                        <div className="text-sm text-white">
+                          <p className="font-semibold">Document {msg.documentAction.type}ed</p>
+                          <p className="text-xs text-green-200">{msg.documentAction.fileName}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-white bg-opacity-10 backdrop-blur-lg text-white border border-white border-opacity-20 rounded-2xl p-4 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Kimmy is thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className="bg-black bg-opacity-30 backdrop-blur-lg border-t border-white border-opacity-10 p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask Kimmy to analyze, edit, or create documents..."
+                  className="flex-1 px-4 py-3 rounded-lg bg-white bg-opacity-10 text-white placeholder-purple-200 border border-white border-opacity-20 focus:border-opacity-60 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  disabled={isTyping}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isTyping}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents Sidebar */}
+        {session.documents.length > 0 && (
+          <div className="w-80 bg-black bg-opacity-30 backdrop-blur-lg border-l border-white border-opacity-10 p-4 overflow-y-auto">
+            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Documents
+            </h3>
+            <div className="space-y-3">
+              {session.documents.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  doc={doc}
+                  onDownload={handleDownload}
+                  onEdit={handleEdit}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main App
+export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  if (!user) {
+    return <AuthScreen onLogin={handleLogin} />;
+  }
+
+  return <Dashboard user={user} onLogout={handleLogout} />;
+}
