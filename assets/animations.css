@@ -1,0 +1,62 @@
+/* Animations & interaction utilities for Jogaina premium effects */
+/* Core card styling & GPU acceleration */
+.card-3d {
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.4s ease;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+/* Subtle floating animation (GPU-friendly) */
+@keyframes subtle-float {
+  0%,100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.01); }
+}
+
+.card-animated {
+  animation: subtle-float 6s ease-in-out infinite;
+}
+.card-animated:nth-child(2n) { animation-delay: 1s; }
+.card-animated:nth-child(3n) { animation-delay: 0.5s; }
+
+/* Magnetic button (uses CSS variables set by JS) */
+.magnetic-button {
+  --mouse-x: 0px;
+  --mouse-y: 0px;
+  display: inline-block;
+  padding: 0.6rem 1.1rem;
+  border-radius: 12px;
+  background: linear-gradient(90deg,#7c3aed,#06b6d4);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transform: translate3d(var(--mouse-x), var(--mouse-y), 0) scale(1);
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  will-change: transform;
+  box-shadow: 0 8px 24px rgba(12,10,30,0.45);
+}
+
+.magnetic-button:active { transform: translate3d(var(--mouse-x), var(--mouse-y), 0) scale(0.98); }
+
+/* Reveal/fade utilities for scroll reveal */
+.reveal-card, .fade-up {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: transform 600ms cubic-bezier(.22,.9,.21,1), opacity 600ms ease;
+}
+.reveal-card.in-view, .fade-up.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Small helpers for demo page layout */
+body.demo-animations { font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: #0b1020; color: #e6eef8; margin:0; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+.demo-wrap { max-width: 1100px; margin: 48px auto; padding: 24px; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 18px; }
+.card-demo { padding: 18px; min-height:140px; display:flex; align-items:center; justify-content:center; color: #fff; }
+.demo-cta { margin-top: 28px; }
